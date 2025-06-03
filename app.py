@@ -11,8 +11,8 @@ nltk.download('punkt')
 nltk.download('punkt_tab')
 
 try:
-    #df = pd.read_csv('/content/drive/My Drive/ML Task Data/twcs.csv')
-    df = pd.read_csv('twcs.csv')
+    df = pd.read_csv('/content/drive/My Drive/ML Task Data/twcs.csv')
+    #df = pd.read_csv('twcs.csv')
     df = df.sample(n=10000, random_state=42)
 except FileNotFoundError:
     st.error("Error: twcs.csv not found.")
