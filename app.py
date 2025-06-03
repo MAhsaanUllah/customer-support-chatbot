@@ -16,6 +16,7 @@ try:
     #df = df.sample(n=10000, random_state=42)
     #df = df.sample(n=5000, random_state=42)
     df = df.sample(frac=1, random_state=42)  # Poora dataset use karega
+    df['cleaned_text'] = df['Text'].apply(clean_text)  # Example, real name check karo
 
 
 except FileNotFoundError:
