@@ -13,7 +13,10 @@ nltk.download('punkt_tab')
 try:
     df = pd.read_csv('https://drive.google.com/uc?export=download&id=1kOluq8NNshQozI5Ik_L9_okq8bSzHiu2')
     #df = pd.read_csv('twcs.csv')
-    df = df.sample(n=10000, random_state=42)
+    #df = df.sample(n=10000, random_state=42)
+    df = df.sample(n=5000, random_state=42)
+
+
 except FileNotFoundError:
     st.error("Error: twcs.csv not found.")
     st.stop()
