@@ -43,7 +43,7 @@ model = LogisticRegression(max_iter=1000)
 model.fit(X, df['issue_category'])
 
 # Initialize GPT-2 and sentiment analyzer
-generator = pipeline('text-generation', model='gpt2', device=0)
+generator = pipeline('text-generation', model='gpt2')
 analyzer = SentimentIntensityAnalyzer()
 
 # Tailored response function
