@@ -1,12 +1,10 @@
+torch
+transformers==4.52.4
 streamlit
 pandas
 scikit-learn
-transformers
 nltk
 textblob
 vaderSentiment
 matplotlib
 seaborn
-torch
-tensorflow
-transformers==4.52.4
