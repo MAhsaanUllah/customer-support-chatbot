@@ -14,7 +14,7 @@ nltk.download('punkt_tab')
 
 # Load and prepare dataset
 try:
-    df = pd.read_csv('https://raw.githubusercontent.com/ErikMichelson/Twitter-Sentiment-Analysis/main/Tweets.csv')
+    df = pd.read_csv('https://raw.githubusercontent.com/susanli2016/NLP-with-Python/master/data/tweets.csv')
     print(f"Dataset size: {len(df)} rows")  # Debug
     print(df.columns)  # Debug: Check columns
     if 'text' not in df.columns:
