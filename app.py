@@ -40,11 +40,10 @@ vectorizer = TfidfVectorizer(max_features=5000)
 X = vectorizer.fit_transform(df['cleaned_text'])
 df['sentiment'] = df['cleaned_text'].apply(lambda x: TextBlob(x).sentiment.polarity)
 df['issue_category'] = df['sentiment'].apply(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'neutral')
-model = LogisticRegression(max_iter=1000)
-model.fit(X, df['issue_category'])
+lr_model = LogisticRegression(max_iter=1000)
+lr_model.fit(X, df['issue_category'])
 
-# Initialize GPT-2 and sentiment analyzer (Updated Section)
-# Manually load GPT-2 model and tokenizer
+# Initialize GPT-2 and sentiment analyzer
 model_name = "gpt2"
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
@@ -74,20 +73,24 @@ def tailored_response(query):
         if any(ind in query.lower() for ind in negative_indicators):
             category = 'negative'
         else:
-            category = model.predict(vectorizer.transform([cleaned_query]))[0]
+            category = lr_model.predict(vectorizer.transform([cleaned_query]))[0]
     prompt = f"{query} - Respond with a short, empathetic support message specific to the issue."
-    response = generator(
-        prompt,
-        max_length=50,
-        num_return_sequences=1,
-        truncation=True,
-        temperature=0.5,
-        top_k=40,
-        no_repeat_ngram_size=2
-    )
-    generated_text = response[0]['generated_text']
-    print(f"Raw generated text: {generated_text}")
-    cleaned_response = generated_text.replace(prompt, "").strip()
+    try:
+        response = generator(
+            prompt,
+            max_length=50,
+            num_return_sequences=1,
+            truncation=True,
+            temperature=0.7,
+            top_k=50,
+            no_repeat_ngram_size=2
+        )
+        generated_text = response[0]['generated_text']
+        print(f"Raw generated text: {generated_text}")
+        cleaned_response = generated_text.replace(prompt, "").strip()
+    except Exception as e:
+        print(f"Error in text generation: {str(e)}")
+        cleaned_response = ""
     negative_keywords = ["package", "lost", "order", "delayed", "product", "broken", "arrived", "disappointed", "damaged"]
     positive_keywords = ["love", "thank", "fast", "great", "amazing"]
     relevant_keywords = negative_keywords if category == "negative" else positive_keywords
