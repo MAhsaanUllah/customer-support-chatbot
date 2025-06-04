@@ -7,30 +7,30 @@ from transformers import pipeline
 import nltk
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+# Download NLTK data
 nltk.download('punkt')
 nltk.download('punkt_tab')
 
+# Load and prepare dataset
 try:
     df = pd.read_csv('https://drive.google.com/uc?export=download&id=1kOluq8NNshQozI5Ik_L9_okq8bSzHiu2')
-    #df = pd.read_csv('twcs.csv')
-    #df = df.sample(n=10000, random_state=42)
-    df = df.sample(n=5000, random_state=42)
-    df = df.sample(frac=1, random_state=42)  # Poora dataset use karega
-      # Example
-
-
+    print(f"Dataset size: {len(df)} rows")  # Check dataset size
+    df = df.sample(frac=1, random_state=42)  # Use full dataset with shuffle
 except FileNotFoundError:
     st.error("Error: twcs.csv not found.")
     st.stop()
 
+# Clean text function
 def clean_text(text):
     text = re.sub(r'http\S+', '', str(text))
     text = re.sub(r'[^a-zA-Z\s]', '', text)
     text = text.lower().strip()
     return text
-df['cleaned_text'] = df['text'].apply(clean_text)
+df['cleaned_text'] = df['text'].apply(clean_text)  # Use 'text' column
 df['cleaned_text'] = df['cleaned_text'].fillna('')
 
+# Vectorize and train model
 vectorizer = TfidfVectorizer(max_features=5000)
 X = vectorizer.fit_transform(df['cleaned_text'])
 df['sentiment'] = df['cleaned_text'].apply(lambda x: TextBlob(x).sentiment.polarity)
@@ -38,9 +38,11 @@ df['issue_category'] = df['sentiment'].apply(lambda x: 'positive' if x > 0 else 
 model = LogisticRegression(max_iter=1000)
 model.fit(X, df['issue_category'])
 
+# Initialize GPT-2 and sentiment analyzer
 generator = pipeline('text-generation', model='gpt2', device=0)
 analyzer = SentimentIntensityAnalyzer()
 
+# Tailored response function
 def tailored_response(query):
     print(f"Raw query input (length {len(query)}): '{query}'")
     cleaned_query = clean_text(query)
@@ -79,10 +81,11 @@ def tailored_response(query):
             cleaned_response = "Thank you for your kind words! We're glad you're happy."
     return category, cleaned_response
 
+# Streamlit interface
 st.title('Customer Support Automation Chatbot')
 st.write("Enter a customer query to get an automated response.")
 query = st.text_input('Enter your query (e.g., "My order is delayed"):', key="query_input")
-if st.button("Submit"):  # Add button to trigger response
+if st.button("Submit"):
     if query is None or len(query.strip()) == 0:
         st.write("**Predicted Issue Category**: Unknown")
         st.write("**Response**: Please enter a valid query.")
@@ -91,6 +94,7 @@ if st.button("Submit"):  # Add button to trigger response
         st.write(f"**Predicted Issue Category**: {category}")
         st.write(f"**Response**: {response}")
 
+# Visualization
 st.subheader("Issue Trends")
 import matplotlib.pyplot as plt
 import seaborn as sns
