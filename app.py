@@ -14,7 +14,7 @@ nltk.download('punkt_tab')
 
 # Load and prepare dataset
 try:
-    df = pd.read_csv('https://github.com/MAhsaanUllah/customer-support-chatbot/blob/e57c2bfb3a86949d7b06d2e23548850463f595a6/twcs_small.csv')
+    df = pd.read_csv('https://raw.githubusercontent.com/MAhsaanUllah/customer-support-chatbot/refs/heads/main/twcs_small.csv')
     print(f"Dataset size: {len(df)} rows")  # Debug
     print(df.columns)  # Debug: Check columns
     if 'text' not in df.columns:
