@@ -17,8 +17,8 @@ try:
     df = pd.read_csv('https://raw.githubusercontent.com/zfz/twitter_corpus/master/full-corpus.csv')
     print(f"Dataset size: {len(df)} rows")  # Debug
     print(df.columns)  # Debug: Check columns
-    if 'text' not in df.columns:
-        st.error("Error: 'text' column not found in dataset.")
+    if 'Tweettext' not in df.columns:
+        st.error("Error: 'Tweettext' column not found in dataset.")
         st.stop()
     df = df.sample(frac=1, random_state=42)  # Use full dataset with shuffle
 except Exception as e:
@@ -31,7 +31,7 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z\s]', '', text)
     text = text.lower().strip()
     return text
-df['cleaned_text'] = df['text'].apply(clean_text)
+df['cleaned_text'] = df['TweetText'].apply(clean_text)
 df['cleaned_text'] = df['cleaned_text'].fillna('')
 
 # Vectorize and train model
