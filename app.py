@@ -3,7 +3,8 @@ import pandas as pd
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from transformers import pipeline
+from transformers import pipeline, GPT2LMHeadModel, GPT2Tokenizer
+import torch
 import nltk
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -42,8 +43,22 @@ df['issue_category'] = df['sentiment'].apply(lambda x: 'positive' if x > 0 else 
 model = LogisticRegression(max_iter=1000)
 model.fit(X, df['issue_category'])
 
-# Initialize GPT-2 and sentiment analyzer
-generator = pipeline('text-generation', model='gpt2')
+# Initialize GPT-2 and sentiment analyzer (Updated Section)
+# Manually load GPT-2 model and tokenizer
+model_name = "gpt2"
+tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+model = GPT2LMHeadModel.from_pretrained(model_name)
+
+# Move model to CPU explicitly using to_empty if needed
+device = torch.device("cpu")
+if model.device.type == "meta":
+    model.to_empty(device=device)
+else:
+    model.to(device)
+
+# Initialize pipeline with preloaded model
+generator = pipeline('text-generation', model=model, tokenizer=tokenizer, device=device)
+
 analyzer = SentimentIntensityAnalyzer()
 
 # Tailored response function
