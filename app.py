@@ -15,10 +15,14 @@ nltk.download('punkt_tab')
 # Load and prepare dataset
 try:
     df = pd.read_csv('https://drive.google.com/uc?export=download&id=1kOluq8NNshQozI5Ik_L9_okq8bSzHiu2')
-    print(f"Dataset size: {len(df)} rows")  # Check dataset size
+    print(f"Dataset size: {len(df)} rows")  # Debug
+    print(df.columns)  # Debug: Check columns
+    if 'text' not in df.columns:
+        st.error("Error: 'text' column not found in dataset.")
+        st.stop()
     df = df.sample(frac=1, random_state=42)  # Use full dataset with shuffle
-except FileNotFoundError:
-    st.error("Error: twcs.csv not found.")
+except Exception as e:
+    st.error(f"Error loading dataset: {str(e)}")
     st.stop()
 
 # Clean text function
@@ -27,7 +31,7 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z\s]', '', text)
     text = text.lower().strip()
     return text
-df['cleaned_text'] = df['text'].apply(clean_text)  # Use 'text' column
+df['cleaned_text'] = df['text'].apply(clean_text)
 df['cleaned_text'] = df['cleaned_text'].fillna('')
 
 # Vectorize and train model
