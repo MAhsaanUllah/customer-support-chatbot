@@ -13,18 +13,18 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 nltk.download('punkt')
 nltk.download('punkt_tab')
 
-# Load and prepare dataset
+# Load and prepare dataset with fallback
 try:
     df = pd.read_csv('https://raw.githubusercontent.com/zfz/twitter_corpus/master/full-corpus.csv')
     print(f"Dataset size: {len(df)} rows")  # Debug
     print(df.columns)  # Debug: Check columns
     if 'TweetText' not in df.columns:
-        st.error("Error: 'TweetText' column not found in dataset.")
-        st.stop()
+        st.error("Error: 'TweetText' column not found in dataset. Using empty dataset.")
+        df = pd.DataFrame(columns=['TweetText', 'cleaned_text', 'sentiment', 'issue_category'])
     df = df.sample(frac=1, random_state=42)  # Use full dataset with shuffle
 except Exception as e:
-    st.error(f"Error loading dataset: {str(e)}")
-    st.stop()
+    st.error(f"Error loading dataset: {str(e)}. Using empty dataset.")
+    df = pd.DataFrame(columns=['TweetText', 'cleaned_text', 'sentiment', 'issue_category'])
 
 # Clean text function
 def clean_text(text):
@@ -35,13 +35,16 @@ def clean_text(text):
 df['cleaned_text'] = df['TweetText'].apply(clean_text)
 df['cleaned_text'] = df['cleaned_text'].fillna('')
 
-# Vectorize and train model
+# Vectorize and train model with fallback
 vectorizer = TfidfVectorizer(max_features=5000)
 X = vectorizer.fit_transform(df['cleaned_text'])
 df['sentiment'] = df['cleaned_text'].apply(lambda x: TextBlob(x).sentiment.polarity)
 df['issue_category'] = df['sentiment'].apply(lambda x: 'positive' if x > 0 else 'negative' if x < 0 else 'neutral')
 lr_model = LogisticRegression(max_iter=1000)
-lr_model.fit(X, df['issue_category'])
+if not df.empty:
+    lr_model.fit(X, df['issue_category'])
+else:
+    st.warning("Dataset empty, using default model behavior.")
 
 # Initialize GPT-2 and sentiment analyzer
 model_name = "gpt2"
@@ -69,11 +72,11 @@ def tailored_response(query):
     print(f"VADER compound score: {compound}")
     category = 'positive' if compound > 0.05 else 'negative' if compound < -0.1 else 'neutral'
     if category == 'neutral':
-        negative_indicators = ["not", "hasn’t", "delayed", "lost", "damaged", "disappointed"]
+        negative_indicators = ["not", "hasn’t", "delayed", "lost", "damaged", "disappointed", "haven’t received"]
         if any(ind in query.lower() for ind in negative_indicators):
             category = 'negative'
         else:
-            category = lr_model.predict(vectorizer.transform([cleaned_query]))[0]
+            category = lr_model.predict(vectorizer.transform([cleaned_query]))[0] if not df.empty else 'neutral'
     prompt = f"{query} - Respond with a short, empathetic support message specific to the issue."
     try:
         response = generator(
@@ -97,10 +100,12 @@ def tailored_response(query):
     is_relevant = any(kw in cleaned_response.lower() for kw in relevant_keywords)
     if len(cleaned_response.split()) < 5 or not is_relevant or '‡' in cleaned_response:
         if category == "negative":
-            issue = "lost package" if "lost" in query.lower() or "arrived" in query.lower() else "delay" if "delayed" in query.lower() else "damaged item" if "damaged" in query.lower() else "broken product" if "broken" in query.lower() else "disappointment" if "disappointed" in query.lower() else "issue"
+            issue = "damaged item" if "damaged" in query.lower() else "lost package" if "lost" in query.lower() else "delay" if "delayed" in query.lower() else "broken product" if "broken" in query.lower() else "disappointment" if "disappointed" in query.lower() else "issue"
             cleaned_response = f"We're sorry for the {issue}. Please provide your order number."
-        else:
+        elif category == "positive":
             cleaned_response = "Thank you for your kind words! We're glad you're happy."
+        else:  # Neutral case
+            cleaned_response = "For refund policy or other details, please contact our support team at support@example.com."
     return category, cleaned_response
 
 # Streamlit interface
