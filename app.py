@@ -76,7 +76,7 @@ def tailored_response(query):
         if any(ind in query.lower() for ind in negative_indicators):
             category = 'negative'
         else:
-            category = lr_model.predict(vectorizer.transform([cleaned_query]))[0] if not df.empty else 'neutral'
+            category = lr_model.predict(vectorizer.transform([cleaned_query]))[0]
     prompt = f"{query} - Respond with a short, empathetic support message specific to the issue."
     try:
         response = generator(
@@ -86,7 +86,8 @@ def tailored_response(query):
             truncation=True,
             temperature=0.7,
             top_k=50,
-            no_repeat_ngram_size=2
+            no_repeat_ngram_size=2,
+            timeout=10
         )
         generated_text = response[0]['generated_text']
         print(f"Raw generated text: {generated_text}")
@@ -100,7 +101,7 @@ def tailored_response(query):
     is_relevant = any(kw in cleaned_response.lower() for kw in relevant_keywords)
     if len(cleaned_response.split()) < 5 or not is_relevant or '‡' in cleaned_response:
         if category == "negative":
-            issue = "damaged item" if "damaged" in query.lower() else "lost package" if "lost" in query.lower() else "delay" if "delayed" in query.lower() else "broken product" if "broken" in query.lower() else "disappointment" if "disappointed" in query.lower() else "issue"
+            issue = "damaged item" if "damaged" in query.lower() else "missing order" if "haven’t received" in query.lower() else "lost package" if "lost" in query.lower() else "delay" if "delayed" in query.lower() else "broken product" if "broken" in query.lower() else "disappointment" if "disappointed" in query.lower() else "issue"
             cleaned_response = f"We're sorry for the {issue}. Please provide your order number."
         elif category == "positive":
             cleaned_response = "Thank you for your kind words! We're glad you're happy."
